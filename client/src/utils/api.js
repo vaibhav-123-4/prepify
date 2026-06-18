@@ -21,3 +21,11 @@ export async function api(endpoint, options = {}) {
 
   return data;
 }
+
+export const post = (endpoint, body) =>
+  api(endpoint, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+
+export const get = (endpoint) => api(endpoint);
