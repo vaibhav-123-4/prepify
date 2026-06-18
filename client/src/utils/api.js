@@ -1,4 +1,4 @@
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_URL + '/api';
 
 export async function api(endpoint, options = {}) {
   const token = localStorage.getItem('token');
@@ -21,8 +21,3 @@ export async function api(endpoint, options = {}) {
 
   return data;
 }
-
-export const post = (endpoint, body) =>
-  api(endpoint, { method: 'POST', body: JSON.stringify(body) });
-
-export const get = (endpoint) => api(endpoint);
