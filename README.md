@@ -1,4 +1,4 @@
-# ⚡ Prepify
+# ⚡ Prepify  
 
 An AI-powered interview preparation platform that generates role-specific questions, evaluates your answers against a strict scoring rubric, and tracks your progress over time.
 
@@ -112,4 +112,4 @@ The client runs on `http://localhost:5173`, the server on `http://localhost:5000
 
 ## License
 
-MIT
+MIT... feel free to use and modify as you like! If you find any bugs or have suggestions, open an issue or submit a PR. Happy prepping!
