@@ -1,7 +1,9 @@
 import express from 'express';
 import auth from '../middleware/auth.js';
+import { uploadResume } from '../middleware/upload.js';
 import Session from '../models/Session.js';
 import { generateQuestions, evaluateAnswer } from '../services/groqService.js';
+import { extractTextFromPDF } from '../services/pdfService.js';
 
 const router = express.Router();
 
@@ -9,7 +11,7 @@ const router = express.Router();
 router.use(auth);
 
 // POST /api/interview/start
-router.post('/start', async (req, res) => {
+router.post('/start', uploadResume, async (req, res) => {
   try {
     const { role, experienceLevel, jobDescription, questionCount } = req.body;
 
@@ -17,7 +19,25 @@ router.post('/start', async (req, res) => {
       return res.status(400).json({ message: 'Role and experienceLevel are required' });
     }
 
-    const questions = await generateQuestions({ role, experienceLevel, jobDescription, questionCount });
+    // Extract resume text if PDF was uploaded
+    let resumeText = null;
+    if (req.file) {
+      try {
+        resumeText = await extractTextFromPDF(req.file.buffer);
+        console.log(`Resume extracted: ${resumeText.length} chars`);
+      } catch (pdfErr) {
+        console.error('PDF parse error:', pdfErr.message);
+        return res.status(400).json({ message: 'Failed to parse PDF. Please upload a valid PDF file.' });
+      }
+    }
+
+    const questions = await generateQuestions({
+      role,
+      experienceLevel,
+      jobDescription,
+      questionCount: questionCount ? parseInt(questionCount, 10) : 5,
+      resumeText,
+    });
 
     const session = await Session.create({
       userId: req.user.userId,
@@ -25,10 +45,18 @@ router.post('/start', async (req, res) => {
       experienceLevel,
       jobDescription: jobDescription || '',
       questions,
+      resumeUsed: !!resumeText,
     });
 
-    res.status(201).json({ sessionId: session._id, questions });
+    res.status(201).json({ sessionId: session._id, questions, resumeUsed: !!resumeText });
   } catch (error) {
+    // Handle multer-specific errors
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ message: 'File too large. Maximum size is 5MB.' });
+    }
+    if (error.message === 'Only PDF files are allowed') {
+      return res.status(400).json({ message: error.message });
+    }
     console.error('Start interview error:', error);
     res.status(500).json({ message: 'Failed to start interview session', error: error.message });
   }
@@ -118,6 +146,29 @@ router.post('/complete', async (req, res) => {
       session.overallScore = 0;
     }
 
+    // Calculate category-wise breakdown
+    const categoryBreakdown = {};
+    session.questions.forEach((q) => {
+      const category = q.category || 'General';
+      const answer = session.answers.find((a) => a.questionId === q.id);
+      const score = answer ? answer.score || 0 : 0;
+
+      if (!categoryBreakdown[category]) {
+        categoryBreakdown[category] = { total: 0, count: 0 };
+      }
+      categoryBreakdown[category].total += score;
+      categoryBreakdown[category].count += 1;
+    });
+
+    const categoryScores = Object.entries(categoryBreakdown).map(
+      ([category, data]) => ({
+        category,
+        averageScore: Math.round((data.total / data.count) * 10) / 10,
+        questionCount: data.count,
+      })
+    );
+
+    session.categoryScores = categoryScores;
     session.completedAt = new Date();
     await session.save({ validateBeforeSave: false });
 
@@ -133,7 +184,7 @@ router.get('/sessions', async (req, res) => {
   try {
     const sessions = await Session.find({ userId: req.user.userId })
       .sort({ createdAt: -1 })
-      .select('role experienceLevel overallScore completedAt createdAt');
+      .select('role experienceLevel overallScore completedAt createdAt categoryScores');
 
     const result = sessions.map((s) => ({
       sessionId: s._id,
@@ -142,6 +193,7 @@ router.get('/sessions', async (req, res) => {
       overallScore: s.overallScore,
       completedAt: s.completedAt,
       createdAt: s.createdAt,
+      categoryScores: s.categoryScores || [],
     }));
 
     res.json(result);

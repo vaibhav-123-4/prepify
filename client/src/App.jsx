@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Spinner from './components/Spinner';
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Setup from './pages/Setup';
@@ -57,6 +58,9 @@ function AuthLayout({ children }) {
 function App() {
   return (
     <Routes>
+      {/* Landing page — public, shown to everyone */}
+      <Route path="/" element={<Landing />} />
+
       {/* Guest routes */}
       <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
       <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
@@ -75,8 +79,8 @@ function App() {
         <ProtectedRoute><AuthLayout><History /></AuthLayout></ProtectedRoute>
       } />
 
-      {/* Default redirect */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

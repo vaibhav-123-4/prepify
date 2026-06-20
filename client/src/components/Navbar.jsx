@@ -10,7 +10,7 @@ export default function Navbar() {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/');
   };
 
   const isActive = (path) => location.pathname === path;
@@ -21,9 +21,9 @@ export default function Navbar() {
         <div className="flex items-center gap-6">
           <span
             onClick={() => navigate('/setup')}
-            className="text-lg font-bold bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent cursor-pointer"
+            className="text-lg font-bold bg-gradient-to-r from-[#8B5CF6] via-[#3B82F6] to-[#22D3EE] bg-clip-text text-transparent cursor-pointer"
           >
-           Prepify
+            ⚡ PrepIQ
           </span>
 
           <div className="hidden sm:flex items-center gap-1">

@@ -89,6 +89,26 @@ export default function History() {
                         <span className="text-xs text-amber-500/70">In Progress</span>
                       )}
                     </div>
+                    {/* Category score dots */}
+                    {s.categoryScores && s.categoryScores.length > 0 && (
+                      <div className="flex items-center gap-1.5 mt-2">
+                        {s.categoryScores.map((c) => (
+                          <span
+                            key={c.category}
+                            title={`${c.category}: ${c.averageScore}/10`}
+                            className="w-2 h-2 rounded-full shrink-0"
+                            style={{
+                              backgroundColor:
+                                c.averageScore >= 7 ? '#22C55E' :
+                                c.averageScore >= 5 ? '#F59E0B' : '#EF4444',
+                            }}
+                          />
+                        ))}
+                        <span className="text-[10px] text-gray-600 ml-1 hidden sm:inline">
+                          {s.categoryScores.map(c => c.category).join(' · ')}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <div className={`text-xl sm:text-2xl font-bold shrink-0 ${scoreColor}`}>

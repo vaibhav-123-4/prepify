@@ -41,6 +41,7 @@ export default function Interview() {
   const [skippedIds, setSkippedIds] = useState(new Set());
   const [answeredMap, setAnsweredMap] = useState({});
   const [showSkippedPrompt, setShowSkippedPrompt] = useState(false);
+  const [resumeUsed, setResumeUsed] = useState(false);
 
   const timerRef = useRef(null);
   const timeUpRef = useRef(null);
@@ -58,6 +59,10 @@ export default function Interview() {
     const stored = sessionStorage.getItem(`interview-${sessionId}`);
     if (stored) {
       setQuestions(JSON.parse(stored));
+    }
+    // Check if resume was used
+    if (sessionStorage.getItem(`interview-resume-${sessionId}`)) {
+      setResumeUsed(true);
     }
     const stateStr = sessionStorage.getItem(`interview-state-${sessionId}`);
     if (stateStr) {
@@ -274,6 +279,13 @@ export default function Interview() {
   return (
     <div className="py-6 sm:py-8 px-4">
       <div className="max-w-3xl mx-auto">
+        {/* Resume badge */}
+        {resumeUsed && (
+          <div className="mb-4 inline-flex items-center gap-1.5 bg-purple-500/20 text-purple-300 text-xs px-3 py-1.5 rounded-full border border-purple-500/20">
+            <span>✦</span> Questions tailored to your resume
+          </div>
+        )}
+
         <div className="mb-6 sm:mb-8">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
@@ -320,6 +332,11 @@ export default function Interview() {
             <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${difficultyColor[currentQuestion.difficulty] || 'bg-gray-800 text-gray-400 border-gray-700'}`}>
               {currentQuestion.difficulty}
             </span>
+            {currentQuestion.source === 'resume' && (
+              <span className="text-xs font-medium px-2.5 py-1 rounded-full border bg-purple-500/10 text-purple-400 border-purple-500/20">
+                📄 From your resume
+              </span>
+            )}
           </div>
 
           <h2 className="text-lg sm:text-xl font-semibold text-white leading-relaxed">

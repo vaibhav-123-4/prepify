@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { post } from '../utils/api';
+import { postFormData } from '../utils/api';
 
 const EXPERIENCE_LEVELS = ['Fresher', '1-3 years', '3+ years'];
 const QUESTION_COUNTS = [3, 5, 7, 10];
@@ -10,9 +10,31 @@ export default function Setup() {
   const [experienceLevel, setExperienceLevel] = useState('');
   const [jobDescription, setJobDescription] = useState('');
   const [questionCount, setQuestionCount] = useState(5);
+  const [resumeFile, setResumeFile] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef(null);
   const navigate = useNavigate();
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== 'application/pdf') {
+      setError('Only PDF files are allowed');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('File too large. Maximum size is 5MB.');
+      return;
+    }
+    setError('');
+    setResumeFile(file);
+  };
+
+  const removeResume = () => {
+    setResumeFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,13 +51,20 @@ export default function Setup() {
 
     setLoading(true);
     try {
-      const data = await post('/interview/start', {
-        role: role.trim(),
-        experienceLevel,
-        jobDescription: jobDescription.trim() || undefined,
-        questionCount,
-      });
+      const formData = new FormData();
+      formData.append('role', role.trim());
+      formData.append('experienceLevel', experienceLevel);
+      formData.append('questionCount', questionCount);
+      if (jobDescription.trim()) formData.append('jobDescription', jobDescription.trim());
+      if (resumeFile) formData.append('resume', resumeFile);
+
+      const data = await postFormData('/interview/start', formData);
+
+      // Store questions and resumeUsed flag for the interview page
       sessionStorage.setItem(`interview-${data.sessionId}`, JSON.stringify(data.questions));
+      if (data.resumeUsed) {
+        sessionStorage.setItem(`interview-resume-${data.sessionId}`, 'true');
+      }
       navigate(`/interview/${data.sessionId}`);
     } catch (err) {
       setError(err.message);
@@ -136,6 +165,58 @@ export default function Setup() {
             />
           </div>
 
+          {/* ── Resume Upload ── */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Upload Resume <span className="text-gray-600 text-xs font-normal">(optional)</span>
+            </label>
+            <p className="text-xs text-slate-400 mb-3">AI will tailor questions to your actual experience</p>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+
+            {!resumeFile ? (
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-slate-600 rounded-xl p-8 text-center cursor-pointer
+                           hover:border-[#6C47FF]/50 hover:bg-[#6C47FF]/5 transition-all group"
+              >
+                <div className="text-3xl mb-2">📄</div>
+                <p className="text-slate-400 text-sm group-hover:text-slate-300 transition-colors">
+                  Drop your PDF here or click to browse
+                </p>
+                <p className="text-xs text-slate-600 mt-1">Max 5MB, PDF only</p>
+              </div>
+            ) : (
+              <div className="backdrop-blur-sm bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-emerald-400 text-lg shrink-0">✅</span>
+                    <span className="text-sm text-white truncate">{resumeFile.name}</span>
+                    <span className="text-xs text-slate-500 shrink-0">
+                      ({(resumeFile.size / 1024).toFixed(0)} KB)
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={removeResume}
+                    className="text-red-400 text-xs hover:text-red-300 transition-colors cursor-pointer shrink-0 ml-2"
+                  >
+                    Remove
+                  </button>
+                </div>
+                <div className="inline-flex items-center gap-1.5 bg-purple-500/20 text-purple-300 text-xs px-3 py-1 rounded-full">
+                  <span>✦</span> Resume-aware questions enabled
+                </div>
+              </div>
+            )}
+          </div>
+
           <button
             type="submit"
             disabled={loading}
@@ -147,7 +228,7 @@ export default function Setup() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                Generating Questions...
+                {resumeFile ? 'Analyzing Resume & Generating...' : 'Generating Questions...'}
               </span>
             ) : (
               'Start Interview'

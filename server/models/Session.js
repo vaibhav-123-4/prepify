@@ -7,6 +7,7 @@ const questionSchema = new mongoose.Schema(
     category: { type: String },
     difficulty: { type: String },
     hint: { type: String },
+    source: { type: String, default: 'general' },
   },
   { _id: false }
 );
@@ -48,6 +49,17 @@ const sessionSchema = new mongoose.Schema({
     type: Number,
     default: null,
   },
+  resumeUsed: {
+    type: Boolean,
+    default: false,
+  },
+  categoryScores: [
+    {
+      category: { type: String },
+      averageScore: { type: Number },
+      questionCount: { type: Number },
+    },
+  ],
   completedAt: {
     type: Date,
     default: null,

@@ -36,6 +36,7 @@ export async function generateQuestions({
   experienceLevel,
   jobDescription,
   questionCount = 5,
+  resumeText,
 }) {
   const prompt = `
 You are a senior technical interviewer specializing in ${role} roles.
@@ -49,6 +50,31 @@ RULES:
 - Avoid generic HR questions.
 - Match difficulty to experience level.
 ${jobDescription ? `- Prioritize topics from: ${jobDescription}` : ""}
+${resumeText ? `
+CANDIDATE'S RESUME CONTENT:
+${resumeText}
+
+IMPORTANT — STRICT QUESTION SPLIT:
+Generate exactly ${questionCount} questions total, split as follows:
+- Exactly ${Math.ceil(questionCount / 2)} questions must be GENERAL questions 
+  for the ${role} role at ${experienceLevel} level — standard technical/behavioral 
+  questions NOT related to the resume at all
+- Exactly ${Math.floor(questionCount / 2)} questions must be RESUME-SPECIFIC — 
+  directly referencing a project, skill, or experience mentioned in the resume above
+
+Tag each question's source clearly in the JSON output using a new field 'source':
+- 'source': 'general' for role-based questions
+- 'source': 'resume' for resume-based questions
+
+Resume-specific questions should:
+- Reference the actual project/technology by name from the resume
+- Ask about specific decisions, challenges, or depth of knowledge
+- Not just ask "tell me about X project" — ask something that requires 
+  real understanding, e.g. "Why did you choose X over Y in your project?"
+
+Mix the order — do NOT put all resume questions first or all general questions 
+first. Interleave them naturally.
+` : ''}
 
 Return ONLY valid JSON.
 
@@ -56,10 +82,11 @@ Return ONLY valid JSON.
   "questions": [
     {
       "id": "1",
-      "question": "Explain React Virtual DOM.",
-      "category": "Technical",
-      "difficulty": "Medium",
-      "hint": "Think about how React avoids direct DOM manipulation."
+      "question": "...",
+      "category": "Technical | Behavioral | System Design | DSA",
+      "difficulty": "Easy | Medium | Hard",
+      "hint": "...",
+      "source": "general | resume"
     }
   ]
 }
@@ -87,8 +114,12 @@ Return ONLY valid JSON.
     console.log(text);
 
     const parsed = parseJsonResponse(text);
+    const questions = parsed.questions || [];
 
-    return parsed.questions || [];
+    return questions.map((q) => ({
+      ...q,
+      source: q.source || "general",
+    }));
   } catch (error) {
     console.error("generateQuestions error:", error);
     throw error;

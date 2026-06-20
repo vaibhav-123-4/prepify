@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { get } from '../utils/api';
 import Spinner from '../components/Spinner';
+import CategoryBreakdown from '../components/CategoryBreakdown';
 
 export default function Results() {
   const { sessionId } = useParams();
@@ -84,6 +85,14 @@ export default function Results() {
           </div>
           <div className="text-gray-400 mt-2 text-xs sm:text-sm">Overall Score out of 10</div>
         </div>
+
+        {/* Category Breakdown */}
+        {session.categoryScores && session.categoryScores.length > 1 && (
+          <div className="mb-6 sm:mb-8">
+            <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">Performance by Category</h2>
+            <CategoryBreakdown categoryScores={session.categoryScores} />
+          </div>
+        )}
 
         {/* Questions & Answers */}
         <div className="space-y-3 mb-6 sm:mb-8">
