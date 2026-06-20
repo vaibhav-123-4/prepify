@@ -67,7 +67,11 @@ export default function Setup() {
       }
       navigate(`/interview/${data.sessionId}`);
     } catch (err) {
-      setError(err.message);
+      if (err.response?.status === 429) {
+        setError(err.response.data.message);
+      } else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }

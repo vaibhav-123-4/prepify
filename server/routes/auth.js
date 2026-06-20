@@ -1,11 +1,12 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import { authRouteLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
 // POST /api/auth/register
-router.post('/register', async (req, res) => {
+router.post('/register', authRouteLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -34,7 +35,7 @@ router.post('/register', async (req, res) => {
 });
 
 // POST /api/auth/login
-router.post('/login', async (req, res) => {
+router.post('/login', authRouteLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 

@@ -42,6 +42,8 @@ export default function Interview() {
   const [answeredMap, setAnsweredMap] = useState({});
   const [showSkippedPrompt, setShowSkippedPrompt] = useState(false);
   const [resumeUsed, setResumeUsed] = useState(false);
+  const [hint, setHint] = useState(null);
+  const [loadingHint, setLoadingHint] = useState(false);
 
   const timerRef = useRef(null);
   const timeUpRef = useRef(null);
@@ -170,7 +172,11 @@ export default function Interview() {
         [currentQuestion.id]: { answer: answer.trim(), feedback: evaluation },
       }));
     } catch (err) {
-      setError(err.message);
+      if (err.response?.status === 429) {
+        setError(err.response.data.message);
+      } else {
+        setError(err.message);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -183,6 +189,7 @@ export default function Interview() {
     setFeedback(null);
     setError('');
     setHintVisible(false);
+    setHint(null);
     if (isLast) {
       setShowSkippedPrompt(true);
     } else {
@@ -198,9 +205,27 @@ export default function Interview() {
     }
   };
 
-  const handleShowHint = () => {
-    setHintUsed((prev) => new Set(prev).add(currentQuestion.id));
-    setHintVisible(true);
+  const handleShowHint = async () => {
+    setLoadingHint(true);
+    setError('');
+    try {
+      const res = await post('/interview/hint', {
+        sessionId,
+        questionId: currentQuestion.id,
+      });
+      setHint(res.hint);
+      setHintUsed((prev) => new Set(prev).add(currentQuestion.id));
+      setHintVisible(true);
+    } catch (err) {
+      if (err.response?.status === 429) {
+        setError(err.response.data.message);
+      } else {
+        setHint("Couldn't load a hint right now — try answering with what you know.");
+        setHintVisible(true);
+      }
+    } finally {
+      setLoadingHint(false);
+    }
   };
 
   const handleNext = () => {
@@ -209,6 +234,7 @@ export default function Interview() {
     setFeedback(null);
     setError('');
     setHintVisible(false);
+    setHint(null);
     if (isLast) {
       const stillSkipped = [...skippedIds].some((id) => !answeredMap[id]);
       if (stillSkipped) {
@@ -250,6 +276,7 @@ export default function Interview() {
 
   const navigateToQuestion = (index) => {
     const q = questions[index];
+    setHint(null);
     if (answeredMap[q.id]) {
       setCurrentIndex(index);
       setFeedback(answeredMap[q.id].feedback);
@@ -343,13 +370,16 @@ export default function Interview() {
             {currentQuestion.question}
           </h2>
 
-          {hintVisible && currentQuestion.hint && (
-            <div className="mt-4 backdrop-blur-sm bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 sm:p-4">
-              <p className="text-sm text-amber-300 leading-relaxed">
-                <span className="font-medium">Hint: </span>
-                {currentQuestion.hint}
-              </p>
-              <p className="text-xs text-amber-500/60 mt-1">-1 point for using hint</p>
+          {hintVisible && hint && (
+            <div className="mt-4 backdrop-blur-sm bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 sm:p-4 flex items-start gap-2.5">
+              <span className="text-lg shrink-0 mt-0.5">💡</span>
+              <div>
+                <p className="text-sm text-amber-300 leading-relaxed">
+                  <span className="font-medium">Hint: </span>
+                  {hint}
+                </p>
+                <p className="text-xs text-amber-500/60 mt-1">-1 point for using hint</p>
+              </div>
             </div>
           )}
         </div>
@@ -373,12 +403,13 @@ export default function Interview() {
             )}
 
             <div className="flex gap-3">
-              {!hintVisible && currentQuestion.hint && (
+              {!hintVisible && (
                 <button
                   onClick={handleShowHint}
-                  className="py-3.5 px-5 rounded-xl backdrop-blur-sm bg-amber-500/10 border border-amber-500/20 text-amber-300 font-semibold hover:bg-amber-500/20 transition-all hover:scale-[1.02] cursor-pointer text-sm"
+                  disabled={loadingHint}
+                  className="py-3.5 px-5 rounded-xl backdrop-blur-sm bg-amber-500/10 border border-amber-500/20 text-amber-300 font-semibold hover:bg-amber-500/20 transition-all hover:scale-[1.02] cursor-pointer text-sm disabled:opacity-50"
                 >
-                  Show Hint
+                  {loadingHint ? 'Getting hint...' : 'Show Hint'}
                 </button>
               )}
               <button

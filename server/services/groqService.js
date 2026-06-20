@@ -218,3 +218,52 @@ Return ONLY valid JSON.
   }
 }
 
+export async function generateHint({ question, role, experienceLevel, category }) {
+  const prompt = `You are a senior technical interviewer giving a helpful 
+hint to a candidate who is stuck.
+
+Role: ${role} (${experienceLevel})
+Question: ${question}
+Category: ${category}
+
+Generate ONE specific, useful hint that:
+- Points toward the key concept or approach needed, without giving away 
+  the full answer
+- Is concrete, not vague — mention a specific term, technique, or angle 
+  to think about
+- Is 1-2 sentences max
+- For technical questions: hint at the right data structure, algorithm 
+  category, or technical concept to consider
+- For system design questions: hint at one key constraint or component 
+  to think about first
+- For behavioral questions: hint at the structure to use (e.g. "think 
+  about using the STAR method — what was the Situation and Task?")
+
+BAD hint example: "Think about the basics of this topic."
+GOOD hint example: "Think about time complexity — what happens if you 
+use a hash map instead of nested loops here?"
+
+Return this exact JSON only, no markdown:
+{
+  "hint": "your specific hint here"
+}`;
+
+  try {
+    const response = await groq.chat.completions.create({
+      model: MODEL,
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 200,
+      response_format: {
+        type: "json_object",
+      },
+    });
+
+    let text = response.choices[0].message.content;
+    text = text.replace(/```json|```/g, "").trim();
+    return JSON.parse(text).hint;
+  } catch (error) {
+    console.error("generateHint error:", error);
+    throw error;
+  }
+}
+

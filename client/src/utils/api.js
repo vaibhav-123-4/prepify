@@ -16,7 +16,10 @@ export async function api(endpoint, options = {}) {
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(data.message || 'Something went wrong');
+    const error = new Error(data.message || 'Something went wrong');
+    error.status = res.status;
+    error.response = { status: res.status, data };
+    throw error;
   }
 
   return data;
@@ -45,7 +48,12 @@ export const postFormData = (endpoint, formData) => {
     body: formData,
   }).then(async (res) => {
     const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Something went wrong');
+    if (!res.ok) {
+      const error = new Error(data.message || 'Something went wrong');
+      error.status = res.status;
+      error.response = { status: res.status, data };
+      throw error;
+    }
     return data;
   });
 };

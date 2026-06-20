@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { get } from '../utils/api';
 import Spinner from '../components/Spinner';
 import CategoryBreakdown from '../components/CategoryBreakdown';
+import { generateInterviewReport } from '../utils/generateReport';
 
 export default function Results() {
   const { sessionId } = useParams();
@@ -11,6 +12,26 @@ export default function Results() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [expandedIndex, setExpandedIndex] = useState(null);
+  const [downloading, setDownloading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const handleDownloadReport = async () => {
+    setDownloading(true);
+    setSuccessMessage('');
+    setError('');
+    try {
+      // Small delay to ensure the loading state displays nicely to the user
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      generateInterviewReport(session);
+      setSuccessMessage('Report downloaded!');
+      setTimeout(() => setSuccessMessage(''), 4000);
+    } catch (err) {
+      console.error(err);
+      setError('Failed to generate PDF report.');
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   useEffect(() => {
     const stored = sessionStorage.getItem(`results-${sessionId}`);
@@ -86,6 +107,37 @@ export default function Results() {
           <div className="text-gray-400 mt-2 text-xs sm:text-sm">Overall Score out of 10</div>
         </div>
 
+        {/* Success Alert */}
+        {successMessage && (
+          <div className="bg-emerald-500/10 text-emerald-400 text-sm rounded-lg px-6 py-4 mb-4 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.2)] text-center">
+            {successMessage}
+          </div>
+        )}
+
+        {/* Action buttons (moved near the top, next to Score card) */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-6 sm:mb-8">
+          <button
+            onClick={() => navigate('/setup')}
+            className="flex-grow py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 text-white font-semibold transition-all hover:scale-[1.02] cursor-pointer shadow-[0_0_20px_rgba(108,71,255,0.4)] hover:shadow-[0_0_30px_rgba(108,71,255,0.6)] text-center text-sm"
+          >
+            Start New Interview
+          </button>
+          <button
+            onClick={handleDownloadReport}
+            disabled={downloading}
+            className="flex-grow py-3.5 rounded-xl backdrop-blur-sm bg-[#8B5CF6]/10 border border-[#8B5CF6]/50 hover:bg-[#8B5CF6]/20 text-[#D8B4FE] font-semibold transition-all hover:scale-[1.02] cursor-pointer flex items-center justify-center gap-2 text-sm disabled:opacity-50"
+          >
+            <span>📥</span>
+            {downloading ? 'Generating...' : 'Download Report'}
+          </button>
+          <button
+            onClick={() => navigate('/history')}
+            className="flex-grow py-3.5 rounded-xl backdrop-blur-sm bg-black/20 border border-white/10 hover:bg-white/10 text-gray-300 font-semibold transition-all hover:scale-[1.02] cursor-pointer text-center text-sm"
+          >
+            View History
+          </button>
+        </div>
+
         {/* Category Breakdown */}
         {session.categoryScores && session.categoryScores.length > 1 && (
           <div className="mb-6 sm:mb-8">
@@ -159,21 +211,8 @@ export default function Results() {
           })}
         </div>
 
-        {/* Action buttons */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <button
-            onClick={() => navigate('/setup')}
-            className="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 text-white font-semibold transition-all hover:scale-[1.02] cursor-pointer shadow-[0_0_20px_rgba(108,71,255,0.4)] hover:shadow-[0_0_30px_rgba(108,71,255,0.6)]"
-          >
-            Start New Interview
-          </button>
-          <button
-            onClick={() => navigate('/history')}
-            className="flex-1 py-3.5 rounded-xl backdrop-blur-sm bg-black/20 border border-white/10 hover:bg-white/10 text-gray-300 font-semibold transition-all hover:scale-[1.02] cursor-pointer"
-          >
-            View History
-          </button>
-        </div>
+        {/* Spacing bottom */}
+        <div className="pt-2" />
       </div>
     </div>
   );

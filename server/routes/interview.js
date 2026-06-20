@@ -2,8 +2,9 @@ import express from 'express';
 import auth from '../middleware/auth.js';
 import { uploadResume } from '../middleware/upload.js';
 import Session from '../models/Session.js';
-import { generateQuestions, evaluateAnswer } from '../services/groqService.js';
+import { generateQuestions, evaluateAnswer, generateHint } from '../services/groqService.js';
 import { extractTextFromPDF } from '../services/pdfService.js';
+import { aiRouteLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
@@ -11,7 +12,7 @@ const router = express.Router();
 router.use(auth);
 
 // POST /api/interview/start
-router.post('/start', uploadResume, async (req, res) => {
+router.post('/start', aiRouteLimiter, uploadResume, async (req, res) => {
   try {
     const { role, experienceLevel, jobDescription, questionCount } = req.body;
 
@@ -63,7 +64,7 @@ router.post('/start', uploadResume, async (req, res) => {
 });
 
 // POST /api/interview/answer
-router.post('/answer', async (req, res) => {
+router.post('/answer', aiRouteLimiter, async (req, res) => {
   try {
     const { sessionId, questionId, answer } = req.body;
 
@@ -107,6 +108,29 @@ router.post('/answer', async (req, res) => {
   } catch (error) {
     console.error('Answer evaluation error:', error.message);
     res.status(500).json({ message: 'Failed to evaluate answer' });
+  }
+});
+
+// POST /api/interview/hint
+router.post('/hint', aiRouteLimiter, async (req, res) => {
+  try {
+    const { sessionId, questionId } = req.body;
+    const session = await Session.findOne({ _id: sessionId, userId: req.user.userId });
+    if (!session) return res.status(404).json({ message: 'Session not found' });
+
+    const question = session.questions.find((q) => q.id === questionId);
+    if (!question) return res.status(404).json({ message: 'Question not found' });
+
+    const hint = await generateHint({
+      question: question.question,
+      role: session.role,
+      experienceLevel: session.experienceLevel,
+      category: question.category,
+    });
+
+    res.json({ hint });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to generate hint', error: error.message });
   }
 });
 
