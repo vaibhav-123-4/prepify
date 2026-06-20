@@ -9,7 +9,7 @@ An AI-powered interview preparation platform that generates role-specific questi
 
 ## Why I built this
 
-Most interview prep tools either give generic, repetitive questions or rely on a peer who may not show up. PrepIQ generates questions tailored to the exact role you're applying for, optionally reads your resume to ask about your actual projects, and gives instant, honest feedback graded against a real evaluation rubric instead of generic praise.
+Most interview prep tools either give generic, repetitive questions or rely on a peer who may not show up. Prepify generates questions tailored to the exact role you're applying for, optionally reads your resume to ask about your actual projects, and gives instant, honest feedback graded against a real evaluation rubric instead of generic praise.
 
 ---
 
@@ -68,8 +68,8 @@ The client communicates with the Express API over a REST interface secured with 
 ### Setup
 
 ```bash
-git clone https://github.com/your-username/prepiq.git
-cd prepiq
+git clone https://github.com/your-username/prepify.git
+cd prepify
 
 # Backend
 cd server

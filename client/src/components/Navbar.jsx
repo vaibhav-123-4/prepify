@@ -23,7 +23,7 @@ export default function Navbar() {
             onClick={() => navigate('/setup')}
             className="text-lg font-bold bg-gradient-to-r from-[#8B5CF6] via-[#3B82F6] to-[#22D3EE] bg-clip-text text-transparent cursor-pointer"
           >
-            ⚡ PrepIQ
+            ⚡ Prepify
           </span>
 
           <div className="hidden sm:flex items-center gap-1">

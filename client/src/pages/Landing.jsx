@@ -319,7 +319,7 @@ export default function Landing() {
       <footer className="relative z-10 border-t border-white/10 py-8 px-6">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-[#94A3B8]">
           <span className="font-bold bg-gradient-to-r from-[#8B5CF6] to-[#22D3EE] bg-clip-text text-transparent text-base">
-            ⚡ PrepIQ
+            ⚡ Prepify
           </span>
           <span>Built by Vaibhav · Powered by Groq + LLaMA</span>
           <span>© 2026</span>
@@ -347,7 +347,7 @@ function LandingNav({ user, navigate }) {
           onClick={() => navigate('/')}
           className="text-xl font-bold bg-gradient-to-r from-[#8B5CF6] via-[#3B82F6] to-[#22D3EE] bg-clip-text text-transparent cursor-pointer select-none"
         >
-          ⚡ PrepIQ
+          ⚡ Prepify
         </span>
 
         {/* Right */}
